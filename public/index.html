@@ -1,0 +1,170 @@
+k<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>اسبيرك | ASPEERK</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+<header>
+    <h1>🔧 اسبيرك</h1>
+    <p>كل قطع الغيار في مكان واحد</p>
+</header>
+
+<main>
+
+    <!-- البحث -->
+    <section class="search-box">
+        <h2>🔍 ابحث عن قطعة الغيار</h2>
+
+        <input
+            type="text"
+            id="searchInput"
+            placeholder="مثال: فلتر زيت"
+            onkeydown="if(event.key === 'Enter') searchParts()"
+        >
+
+        <button onclick="searchParts()">بحث</button>
+    </section>
+
+
+    <!-- الخيارات -->
+    <section class="options">
+
+        <div class="card">
+            <h3>🚗 أنا مشتري</h3>
+            <p>ابحث عن القطعة وشاهد المحلات التي توفرها.</p>
+        </div>
+
+        <div class="card">
+            <h3>🏪 أنا صاحب محل</h3>
+            <p>أضف محلك وقطع الغيار الموجودة لديك.</p>
+        </div>
+
+    </section>
+
+
+    <!-- النتائج -->
+    <section id="results">
+        <h2>النتائج</h2>
+        <p>اكتب اسم القطعة أو رقمها للبحث.</p>
+    </section>
+
+
+    <!-- تسجيل محل -->
+    <section class="form-box">
+
+        <h2>🏪 تسجيل محل جديد</h2>
+
+        <input
+            type="text"
+            id="shopName"
+            placeholder="اسم المحل"
+        >
+
+        <input
+            type="text"
+            id="shopPhone"
+            placeholder="رقم الهاتف"
+        >
+
+        <input
+            type="text"
+            id="shopAddress"
+            placeholder="عنوان المحل"
+        >
+
+        <input
+            type="text"
+            id="shopLocation"
+            placeholder="الموقع / المنطقة"
+        >
+
+        <button onclick="addShop()">
+            تسجيل المحل
+        </button>
+
+        <p id="shopMessage"></p>
+
+    </section>
+
+
+    <!-- إضافة قطعة -->
+    <section class="form-box">
+
+        <h2>🔧 إضافة قطعة غيار</h2>
+
+        <select id="shopId">
+            <option value="">🏪 اختر المحل</option>
+        </select>
+
+        <input
+            type="text"
+            id="partName"
+            placeholder="اسم القطعة"
+        >
+
+        <input
+            type="text"
+            id="partNumber"
+            placeholder="رقم القطعة"
+        >
+
+        <input
+            type="text"
+            id="carModel"
+            placeholder="السيارة والموديل"
+        >
+
+        <input
+            type="number"
+            id="partPrice"
+            placeholder="السعر"
+        >
+
+        <input
+            type="number"
+            id="partQuantity"
+            placeholder="الكمية"
+        >
+
+        <button onclick="addPart()">
+            إضافة القطعة
+        </button>
+
+        <p id="partMessage"></p>
+
+    </section>
+
+
+    <!-- إدارة البيانات -->
+    <section class="form-box">
+
+        <h2>🛠️ إدارة البيانات</h2>
+
+        <button onclick="loadManagement()">
+            📋 عرض المحلات والقطع
+        </button>
+
+        <div id="management">
+            <p>اضغط على الزر لعرض البيانات.</p>
+        </div>
+
+    </section>
+
+</main>
+
+
+<footer>
+    <p>© 2026 اسبيرك ASPEERK</p>
+</footer>
+
+
+<script src="app.js"></script>
+
+</body>
+</html>

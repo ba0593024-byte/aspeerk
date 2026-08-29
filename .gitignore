@@ -1,0 +1,7 @@
+node_modules/
+data/*.db
+data/*.sqlite
+data/*.sqlite3
+.env
+server.js.backup
+public/app.js.backup
