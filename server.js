@@ -10,7 +10,42 @@ const PORT = process.env.PORT || 3000;
 
 // قاعدة البيانات
 const db = new sqlite3.Database("./data/aspeerk.db");
+// إنشاء جداول قاعدة البيانات تلقائياً
+db.serialize(() => {
 
+    db.run(`
+        CREATE TABLE IF NOT EXISTS shops (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            phone TEXT,
+            address TEXT,
+            location TEXT
+        )
+    `);
+
+    db.run(`
+        CREATE TABLE IF NOT EXISTS parts (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            shop_id INTEGER NOT NULL,
+            name TEXT NOT NULL,
+            part_number TEXT,
+            car_model TEXT,
+            price REAL,
+            quantity INTEGER DEFAULT 0,
+            FOREIGN KEY (shop_id) REFERENCES shops(id)
+        )
+    `);
+
+    db.run(`
+        CREATE TABLE IF NOT EXISTS cars (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            brand TEXT NOT NULL,
+            model TEXT NOT NULL,
+            year INTEGER
+        )
+    `);
+
+});
 app.use(express.json());
 app.use(express.static(path.join(__dirname, "public")));
 
