@@ -1,107 +1,337 @@
 * {
     box-sizing: border-box;
-    margin: 0;
-    padding: 0;
-    font-family: Arial, sans-serif;
 }
 
 body {
+    margin: 0;
+    font-family: Arial, Tahoma, sans-serif;
     background: #f4f6f8;
     color: #222;
-    min-height: 100vh;
+    line-height: 1.7;
 }
 
+.container {
+    width: 92%;
+    max-width: 900px;
+    margin: auto;
+}
+
+/* ================================
+   الرأس
+================================ */
+
 header {
-    background: #111827;
+    background: #1f2937;
     color: white;
     text-align: center;
-    padding: 30px 15px;
+    padding: 25px 10px;
 }
 
 header h1 {
-    font-size: 36px;
-    margin-bottom: 8px;
+    margin: 0;
+    font-size: 32px;
 }
 
 header p {
-    font-size: 18px;
+    margin: 5px 0 0;
+    font-size: 17px;
 }
 
-main {
-    width: 92%;
-    max-width: 900px;
-    margin: 25px auto;
-}
+/* ================================
+   الصناديق
+================================ */
 
-.search-box {
+.form-box {
     background: white;
-    padding: 25px;
-    border-radius: 15px;
-    text-align: center;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+    margin: 20px 0;
+    padding: 20px;
+    border-radius: 14px;
+    box-shadow: 0 3px 12px rgba(0, 0, 0, 0.08);
 }
 
-.search-box h2 {
-    margin-bottom: 18px;
+.form-box h2 {
+    margin-top: 0;
+    color: #1f2937;
 }
 
-.search-box input {
+/* ================================
+   البحث
+================================ */
+
+.search-row {
+    display: flex;
+    gap: 10px;
+}
+
+.search-row input {
+    flex: 1;
+}
+
+/* ================================
+   الحقول
+================================ */
+
+label {
+    display: block;
+    margin-top: 12px;
+    margin-bottom: 5px;
+    font-weight: bold;
+}
+
+input,
+select,
+button {
     width: 100%;
-    padding: 15px;
-    border: 1px solid #ddd;
-    border-radius: 10px;
+    min-height: 46px;
+    padding: 10px 12px;
+    border-radius: 9px;
     font-size: 16px;
-    margin-bottom: 12px;
 }
 
-.search-box button {
-    width: 100%;
-    padding: 14px;
+input,
+select {
+    border: 1px solid #ccc;
+    background: white;
+}
+
+input:focus,
+select:focus {
+    outline: none;
+    border-color: #2563eb;
+}
+
+/* ================================
+   الأزرار
+================================ */
+
+button {
     border: none;
-    border-radius: 10px;
     background: #2563eb;
     color: white;
-    font-size: 18px;
+    font-weight: bold;
     cursor: pointer;
+    margin-top: 12px;
 }
 
-.options {
+button:hover {
+    opacity: 0.9;
+}
+
+button:active {
+    transform: scale(0.98);
+}
+
+/* ================================
+   بطاقات التعريف
+================================ */
+
+.info-grid {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: repeat(2, 1fr);
     gap: 15px;
-    margin-top: 20px;
+    margin: 20px 0;
 }
 
-.card {
+.info-card {
     background: white;
-    padding: 22px;
-    border-radius: 15px;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.06);
+    padding: 20px;
+    border-radius: 14px;
+    box-shadow: 0 3px 12px rgba(0, 0, 0, 0.08);
 }
 
-.card h3 {
-    margin-bottom: 10px;
+.info-card h2 {
+    margin-top: 0;
 }
 
-#results {
-    background: white;
-    margin-top: 20px;
-    padding: 25px;
-    border-radius: 15px;
+/* ================================
+   نتائج البحث
+================================ */
+
+.result-card {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 15px;
+    margin-top: 15px;
 }
+
+.result-card h3 {
+    margin-top: 0;
+    color: #1f2937;
+}
+
+.result-card hr {
+    border: none;
+    border-top: 1px solid #ddd;
+    margin: 12px 0;
+}
+
+/* ================================
+   صور قطع الغيار
+================================ */
+
+.part-image {
+    display: block;
+    width: 100%;
+    max-width: 350px;
+    max-height: 300px;
+    object-fit: contain;
+    margin: 0 auto 15px;
+    border-radius: 10px;
+    background: #eee;
+}
+
+.management-image {
+    display: block;
+    width: 100%;
+    max-width: 250px;
+    max-height: 220px;
+    object-fit: contain;
+    margin-bottom: 12px;
+    border-radius: 10px;
+    background: #eee;
+}
+
+/* ================================
+   أزرار الاتصال
+================================ */
+
+.contact-buttons,
+.management-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 12px;
+}
+
+.contact-buttons a,
+.management-buttons a,
+.management-buttons button,
+.map-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 42px;
+    padding: 8px 14px;
+    border-radius: 8px;
+    text-decoration: none;
+    border: none;
+    cursor: pointer;
+    font-size: 15px;
+    font-weight: bold;
+}
+
+.call-button {
+    background: #16a34a;
+    color: white;
+}
+
+.whatsapp-button {
+    background: #22c55e;
+    color: white;
+}
+
+.map-button {
+    background: #7c3aed;
+    color: white;
+    margin-top: 10px;
+}
+
+.management-buttons a {
+    background: #2563eb;
+    color: white;
+}
+
+.management-buttons button {
+    width: auto;
+    background: #475569;
+    color: white;
+    margin-top: 0;
+}
+
+.management-buttons button:last-child {
+    background: #dc2626;
+}
+
+/* ================================
+   الإدارة
+================================ */
+
+.management-card {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 15px;
+    margin: 15px 0;
+}
+
+.management-card h4 {
+    margin-top: 0;
+    font-size: 18px;
+}
+
+/* ================================
+   الرسائل
+================================ */
+
+#shopMessage,
+#partMessage,
+#locationMessage {
+    font-weight: bold;
+    margin-top: 10px;
+}
+
+/* ================================
+   التذييل
+================================ */
 
 footer {
     text-align: center;
-    padding: 25px;
-    color: #666;
+    background: #1f2937;
+    color: white;
+    margin-top: 30px;
+    padding: 20px 10px;
 }
 
+footer p {
+    margin: 4px 0;
+}
+
+/* ================================
+   الهاتف
+================================ */
+
 @media (max-width: 600px) {
-    .options {
-        grid-template-columns: 1fr;
+
+    .container {
+        width: 94%;
     }
 
     header h1 {
-        font-size: 30px;
+        font-size: 27px;
+    }
+
+    .search-row {
+        flex-direction: column;
+    }
+
+    .info-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .form-box {
+        padding: 15px;
+    }
+
+    .contact-buttons,
+    .management-buttons {
+        flex-direction: column;
+    }
+
+    .contact-buttons a,
+    .management-buttons a,
+    .management-buttons button,
+    .map-button {
+        width: 100%;
     }
 }

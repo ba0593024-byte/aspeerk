@@ -1,91 +1,153 @@
-k<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ar" dir="rtl">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
     <title>اسبيرك | ASPEERK</title>
+
     <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
 
 <header>
-    <h1>🔧 اسبيرك</h1>
-    <p>كل قطع الغيار في مكان واحد</p>
+    <div class="container">
+        <h1>🔧 اسبيرك</h1>
+        <p>كل قطع الغيار في مكان واحد</p>
+    </div>
 </header>
 
-<main>
+<main class="container">
 
-    <!-- البحث -->
-    <section class="search-box">
+    <!-- ================================ -->
+    <!-- 🔍 البحث -->
+    <!-- ================================ -->
+
+    <section class="form-box">
+
         <h2>🔍 ابحث عن قطعة الغيار</h2>
 
-        <input
-            type="text"
-            id="searchInput"
-            placeholder="مثال: فلتر زيت"
-            onkeydown="if(event.key === 'Enter') searchParts()"
-        >
+        <div class="search-row">
 
-        <button onclick="searchParts()">بحث</button>
-    </section>
+            <input
+                type="search"
+                id="searchInput"
+                placeholder="مثال: فلتر زيت"
+                autocomplete="off"
+            >
 
+            <button
+                type="button"
+                onclick="searchParts()"
+            >
+                🔍 بحث
+            </button>
 
-    <!-- الخيارات -->
-    <section class="options">
-
-        <div class="card">
-            <h3>🚗 أنا مشتري</h3>
-            <p>ابحث عن القطعة وشاهد المحلات التي توفرها.</p>
         </div>
 
-        <div class="card">
-            <h3>🏪 أنا صاحب محل</h3>
-            <p>أضف محلك وقطع الغيار الموجودة لديك.</p>
+        <div id="results">
+            <p>اكتب اسم القطعة أو رقمها أو موديل السيارة للبحث.</p>
         </div>
 
     </section>
 
 
-    <!-- النتائج -->
-    <section id="results">
-        <h2>النتائج</h2>
-        <p>اكتب اسم القطعة أو رقمها للبحث.</p>
+    <!-- ================================ -->
+    <!-- 🚗 🏪 التعريف -->
+    <!-- ================================ -->
+
+    <section class="info-grid">
+
+        <div class="info-card">
+            <h2>🚗 أنا مشتري</h2>
+
+            <p>
+                ابحث عن قطعة الغيار
+                وشاهد المحلات التي توفرها.
+            </p>
+        </div>
+
+
+        <div class="info-card">
+            <h2>🏪 أنا صاحب محل</h2>
+
+            <p>
+                أضف محلك وقطع الغيار الموجودة
+                لديك ليجدها المشترون بسهولة.
+            </p>
+        </div>
+
     </section>
 
 
-    <!-- تسجيل محل -->
+    <!-- ================================ -->
+    <!-- 🏪 تسجيل محل -->
+    <!-- ================================ -->
+
     <section class="form-box">
 
         <h2>🏪 تسجيل محل جديد</h2>
 
-        <input
-            type="text"
-            id="shopName"
-            placeholder="اسم المحل"
-        >
+        <label for="shopName">
+            اسم المحل
+        </label>
 
         <input
             type="text"
-            id="shopPhone"
-            placeholder="رقم الهاتف"
+            id="shopName"
+            placeholder="مثال: محل اسبيرك"
         >
+
+
+        <label for="shopPhone">
+            📞 رقم الهاتف
+        </label>
+
+        <input
+            type="tel"
+            id="shopPhone"
+            placeholder="مثال: 0123456789"
+        >
+
+
+        <label for="shopAddress">
+            📍 العنوان
+        </label>
 
         <input
             type="text"
             id="shopAddress"
-            placeholder="عنوان المحل"
+            placeholder="مثال: الخرطوم"
         >
+
+
+        <label for="shopLocation">
+            اسم المنطقة / الموقع
+        </label>
 
         <input
             type="text"
             id="shopLocation"
-            placeholder="الموقع / المنطقة"
+            placeholder="مثال: الصناعات"
         >
 
-        <button onclick="addShop()">
-            تسجيل المحل
+
+        <button
+            type="button"
+            onclick="getShopLocation()"
+        >
+            📍 تحديد موقعي الحالي
+        </button>
+
+        <p id="locationMessage"></p>
+
+
+        <button
+            type="button"
+            onclick="addShop()"
+        >
+            🏪 تسجيل المحل
         </button>
 
         <p id="shopMessage"></p>
@@ -93,47 +155,99 @@ k<!DOCTYPE html>
     </section>
 
 
-    <!-- إضافة قطعة -->
+    <!-- ================================ -->
+    <!-- 🔧 إضافة قطعة -->
+    <!-- ================================ -->
+
     <section class="form-box">
 
         <h2>🔧 إضافة قطعة غيار</h2>
 
+
+        <label for="shopId">
+            🏪 اختر المحل
+        </label>
+
         <select id="shopId">
-            <option value="">🏪 اختر المحل</option>
+            <option value="">
+                اختر المحل
+            </option>
         </select>
+
+
+        <label for="partName">
+            اسم قطعة الغيار
+        </label>
 
         <input
             type="text"
             id="partName"
-            placeholder="اسم القطعة"
+            placeholder="مثال: فلتر زيت"
         >
+
+
+        <label for="partNumber">
+            رقم القطعة
+        </label>
 
         <input
             type="text"
             id="partNumber"
-            placeholder="رقم القطعة"
+            placeholder="مثال: 90915-YZZD1"
         >
+
+
+        <label for="carModel">
+            🚗 السيارة والموديل
+        </label>
 
         <input
             type="text"
             id="carModel"
-            placeholder="السيارة والموديل"
+            placeholder="مثال: Toyota Corolla 2015"
         >
+
+
+        <label for="partPrice">
+            💰 السعر
+        </label>
 
         <input
             type="number"
             id="partPrice"
             placeholder="السعر"
+            min="0"
         >
+
+
+        <label for="partQuantity">
+            📦 الكمية
+        </label>
 
         <input
             type="number"
             id="partQuantity"
             placeholder="الكمية"
+            min="0"
         >
 
-        <button onclick="addPart()">
-            إضافة القطعة
+
+        <label for="partImage">
+            🖼️ صورة قطعة الغيار
+        </label>
+
+        <input
+            type="file"
+            id="partImage"
+            accept="image/*"
+        >
+
+
+        <button
+            type="button"
+            onclick="addPart()"
+        >
+            ➕ إضافة القطعة
         </button>
 
         <p id="partMessage"></p>
@@ -141,17 +255,25 @@ k<!DOCTYPE html>
     </section>
 
 
-    <!-- إدارة البيانات -->
+    <!-- ================================ -->
+    <!-- 🛠️ الإدارة -->
+    <!-- ================================ -->
+
     <section class="form-box">
 
         <h2>🛠️ إدارة البيانات</h2>
 
-        <button onclick="loadManagement()">
+        <button
+            type="button"
+            onclick="loadManagement()"
+        >
             📋 عرض المحلات والقطع
         </button>
 
         <div id="management">
-            <p>اضغط على الزر لعرض البيانات.</p>
+            <p>
+                اضغط على الزر لعرض البيانات.
+            </p>
         </div>
 
     </section>
@@ -159,8 +281,20 @@ k<!DOCTYPE html>
 </main>
 
 
+<!-- ================================ -->
+<!-- 🔻 التذييل -->
+<!-- ================================ -->
+
 <footer>
-    <p>© 2026 اسبيرك ASPEERK</p>
+
+    <p>
+        © 2026 اسبيرك ASPEERK
+    </p>
+
+    <p>
+        كل قطع الغيار في مكان واحد 🔧
+    </p>
+
 </footer>
 
 

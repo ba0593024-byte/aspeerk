@@ -1,765 +1,689 @@
+const API = "/api";
+
+let shopLatitude = null;
+let shopLongitude = null;
+
+function escapeHtml(value) {
+    return String(value ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+}
+
+function whatsappNumber(phone) {
+    let number = String(phone || "").replace(/\D/g, "");
+
+    if (number.startsWith("0")) {
+        number = "249" + number.substring(1);
+    }
+
+    return number;
+}
+
+function mapUrl(latitude, longitude) {
+    if (latitude == null || longitude == null) {
+        return "";
+    }
+
+    return `https://www.google.com/maps?q=${latitude},${longitude}`;
+}
+
 // ========================================
-// 🔍 البحث عن قطع الغيار
+// تحميل المحلات
 // ========================================
 
-async function searchParts() {
-    const searchInput = document.getElementById("searchInput");
-    const results = document.getElementById("results");
+async function loadShops() {
+    try {
+        const response = await fetch(`${API}/shops`);
+        const shops = await response.json();
 
-    const search = searchInput.value.trim();
+        const select = document.getElementById("shopId");
 
-    if (!search) {
-        results.innerHTML = `
-            <h2>النتائج</h2>
-            <p>اكتب اسم القطعة أو رقمها أولاً.</p>
-        `;
+        if (!select) return;
+
+        select.innerHTML = '<option value="">اختر المحل</option>';
+
+        shops.forEach(shop => {
+            const option = document.createElement("option");
+            option.value = shop.id;
+            option.textContent = shop.name;
+            select.appendChild(option);
+        });
+
+    } catch (error) {
+        console.error("خطأ في تحميل المحلات:", error);
+    }
+}
+
+// ========================================
+// تحديد موقع المحل
+// ========================================
+
+function getShopLocation() {
+    const message = document.getElementById("locationMessage");
+
+    if (!navigator.geolocation) {
+        message.textContent = "المتصفح لا يدعم تحديد الموقع";
         return;
     }
 
-    results.innerHTML = `
-        <h2>النتائج</h2>
-        <p>🔍 جاري البحث...</p>
-    `;
+    message.textContent = "جاري تحديد موقعك...";
+
+    navigator.geolocation.getCurrentPosition(
+        position => {
+            shopLatitude = position.coords.latitude;
+            shopLongitude = position.coords.longitude;
+
+            message.textContent =
+                `تم تحديد الموقع بنجاح 📍`;
+        },
+        error => {
+            console.error(error);
+            message.textContent =
+                "تعذر تحديد الموقع، تأكد من السماح للموقع.";
+        }
+    );
+}
+
+// ========================================
+// إضافة محل
+// ========================================
+
+async function addShop() {
+    const name = document.getElementById("shopName").value.trim();
+    const phone = document.getElementById("shopPhone").value.trim();
+    const address = document.getElementById("shopAddress").value.trim();
+    const location = document.getElementById("shopLocation").value.trim();
+    const message = document.getElementById("shopMessage");
+
+    if (!name) {
+        message.textContent = "يرجى إدخال اسم المحل";
+        return;
+    }
+
+    try {
+        const response = await fetch(`${API}/shops`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                name,
+                phone,
+                address,
+                location,
+                latitude: shopLatitude,
+                longitude: shopLongitude
+            })
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.error || "حدث خطأ");
+        }
+
+        message.textContent = "تمت إضافة المحل بنجاح ✅";
+
+        document.getElementById("shopName").value = "";
+        document.getElementById("shopPhone").value = "";
+        document.getElementById("shopAddress").value = "";
+        document.getElementById("shopLocation").value = "";
+
+        shopLatitude = null;
+        shopLongitude = null;
+
+        await loadShops();
+
+    } catch (error) {
+        console.error(error);
+        message.textContent = "حدث خطأ أثناء إضافة المحل";
+    }
+}
+
+// ========================================
+// البحث عن قطع الغيار
+// ========================================
+
+async function searchParts() {
+    const input = document.getElementById("searchInput");
+    const results = document.getElementById("results");
+
+    const query = input.value.trim();
+
+    if (!query) {
+        results.innerHTML = "<p>اكتب اسم القطعة أو رقمها أو موديل السيارة.</p>";
+        return;
+    }
+
+    results.innerHTML = "<p>جاري البحث... 🔎</p>";
 
     try {
         const response = await fetch(
-            "/api/search?q=" + encodeURIComponent(search)
+            `${API}/search?q=${encodeURIComponent(query)}`
         );
 
         const parts = await response.json();
 
-        if (!response.ok) {
-            throw new Error("Search failed");
-        }
-
-        if (parts.length === 0) {
-            results.innerHTML = `
-                <h2>النتائج</h2>
-                <p>❌ لم نجد هذه القطعة حاليًا.</p>
-            `;
+        if (!parts.length) {
+            results.innerHTML = "<p>لم نجد قطع غيار مطابقة.</p>";
             return;
         }
 
         results.innerHTML = `
-            <h2>وجدنا ${parts.length} نتيجة</h2>
+            <h3>وجدنا ${parts.length} نتيجة</h3>
+            ${parts.map(part => {
 
-            ${parts.map(part => `
-                <div class="card">
-                    <h3>🔧 ${part.name || "بدون اسم"}</h3>
+                const imageHtml = part.image
+                    ? `
+                        <div class="part-image-box">
+                            <img
+                                src="${escapeHtml(part.image)}"
+                                alt="${escapeHtml(part.name)}"
+                                class="part-image"
+                                onerror="this.parentElement.style.display='none'"
+                            >
+                        </div>
+                    `
+                    : "";
 
-                    <p>🚗 السيارة:
-                        ${part.car_model || "غير محددة"}
-                    </p>
+                const phone = escapeHtml(part.phone || "");
+                const whatsapp = whatsappNumber(part.phone);
+                const map = mapUrl(part.latitude, part.longitude);
 
-                    <p>🔢 رقم القطعة:
-                        ${part.part_number || "غير متوفر"}
-                    </p>
+                return `
+                    <div class="part-card">
 
-                    <p>💰 السعر:
-                        ${part.price ?? 0} جنيه
-                    </p>
+                        ${imageHtml}
 
-                    <p>📦 الكمية:
-                        ${part.quantity ?? 0}
-                    </p>
+                        <div class="part-info">
 
-                    <p>🏪 المحل:
-                        ${part.shop_name || "غير معروف"}
-                    </p>
+                            <h3>🔧 ${escapeHtml(part.name)}</h3>
 
-                    <p>📍 الموقع:
-                        ${part.location || "غير محدد"}
-                    </p>
+                            <p>
+                                🚗 السيارة:
+                                ${escapeHtml(part.car_model || "غير محدد")}
+                            </p>
 
-                    <p>📞 الهاتف:
-                        ${part.phone || "غير متوفر"}
-                    </p>
-                </div>
-            `).join("")}
+                            <p>
+                                🔢 رقم القطعة:
+                                ${escapeHtml(part.part_number || "غير محدد")}
+                            </p>
+
+                            <p>
+                                💰 السعر:
+                                ${escapeHtml(part.price ?? "غير محدد")} جنيه
+                            </p>
+
+                            <p>
+                                📦 الكمية:
+                                ${escapeHtml(part.quantity ?? 0)}
+                            </p>
+
+                            <hr>
+
+                            <p>
+                                🏪 المحل:
+                                <strong>${escapeHtml(part.shop_name || "غير محدد")}</strong>
+                            </p>
+
+                            <p>
+                                📍 العنوان:
+                                ${escapeHtml(part.address || "غير محدد")}
+                            </p>
+
+                            <p>
+                                📌 الموقع:
+                                ${escapeHtml(part.location || "غير محدد")}
+                            </p>
+
+                            <div class="action-buttons">
+
+                                ${
+                                    part.phone
+                                    ? `
+                                        <a
+                                            href="tel:${phone}"
+                                            class="action-button call-button"
+                                        >
+                                            📞 اتصال
+                                        </a>
+
+                                        <a
+                                            href="https://wa.me/${whatsapp}"
+                                            target="_blank"
+                                            class="action-button whatsapp-button"
+                                        >
+                                            💬 واتساب
+                                        </a>
+                                    `
+                                    : ""
+                                }
+
+                                ${
+                                    map
+                                    ? `
+                                        <a
+                                            href="${map}"
+                                            target="_blank"
+                                            class="action-button map-button"
+                                        >
+                                            🗺️ الخريطة
+                                        </a>
+                                    `
+                                    : ""
+                                }
+
+                            </div>
+
+                        </div>
+                    </div>
+                `;
+            }).join("")}
         `;
 
     } catch (error) {
         console.error(error);
-
-        results.innerHTML = `
-            <h2>النتائج</h2>
-            <p>⚠️ حدث خطأ أثناء البحث.</p>
-        `;
+        results.innerHTML = "<p>حدث خطأ أثناء البحث.</p>";
     }
 }
 
-
 // ========================================
-// 🏪 تحميل المحلات
+// البحث عند الضغط على Enter
 // ========================================
 
-async function loadShops() {
+document.addEventListener("DOMContentLoaded", () => {
 
-    const shopSelect = document.getElementById("shopId");
+    loadShops();
 
-    if (!shopSelect) return;
+    const searchInput = document.getElementById("searchInput");
 
-    try {
-
-        const response = await fetch("/api/shops");
-        const shops = await response.json();
-
-        shopSelect.innerHTML =
-            '<option value="">🏪 اختر المحل</option>';
-
-        shops.forEach(shop => {
-
-            const option = document.createElement("option");
-
-            option.value = shop.id;
-
-            option.textContent =
-                shop.name +
-                (shop.location ? " - " + shop.location : "");
-
-            shopSelect.appendChild(option);
+    if (searchInput) {
+        searchInput.addEventListener("keydown", event => {
+            if (event.key === "Enter") {
+                searchParts();
+            }
         });
-
-    } catch (error) {
-
-        console.error("خطأ في تحميل المحلات:", error);
-
-    }
-}
-
-
-// ========================================
-// 🏪 تسجيل محل جديد
-// ========================================
-
-async function addShop() {
-
-    const data = {
-        name: document.getElementById("shopName").value.trim(),
-        phone: document.getElementById("shopPhone").value.trim(),
-        address: document.getElementById("shopAddress").value.trim(),
-        location: document.getElementById("shopLocation").value.trim()
-    };
-
-    const message = document.getElementById("shopMessage");
-
-    if (!data.name) {
-        message.innerHTML = "⚠️ اكتب اسم المحل أولاً";
-        return;
     }
 
-    try {
-
-        const response = await fetch("/api/shops", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify(data)
-        });
-
-        const result = await response.json();
-
-        if (result.success) {
-
-            message.innerHTML =
-                "✅ تم تسجيل المحل بنجاح. رقم المحل: " +
-                result.shop_id;
-
-            document.getElementById("shopName").value = "";
-            document.getElementById("shopPhone").value = "";
-            document.getElementById("shopAddress").value = "";
-            document.getElementById("shopLocation").value = "";
-
-            await loadShops();
-
-        } else {
-
-            message.innerHTML =
-                "❌ " + (result.error || "حدث خطأ");
-
-        }
-
-    } catch (error) {
-
-        console.error(error);
-
-        message.innerHTML =
-            "⚠️ تعذر الاتصال بالخادم";
-    }
-}
-
+});
 
 // ========================================
-// 🔧 إضافة قطعة غيار
+// إضافة قطعة غيار
 // ========================================
 
 async function addPart() {
-
-    const data = {
-        shop_id: document.getElementById("shopId").value,
-        name: document.getElementById("partName").value.trim(),
-        part_number: document.getElementById("partNumber").value.trim(),
-        car_model: document.getElementById("carModel").value.trim(),
-        price: document.getElementById("partPrice").value,
-        quantity: document.getElementById("partQuantity").value
-    };
-
+    const shopId = document.getElementById("shopId").value;
+    const name = document.getElementById("partName").value.trim();
+    const partNumber = document.getElementById("partNumber").value.trim();
+    const carModel = document.getElementById("carModel").value.trim();
+    const price = document.getElementById("partPrice").value.trim();
+    const quantity = document.getElementById("partQuantity").value.trim();
+    const imageInput = document.getElementById("partImage");
     const message = document.getElementById("partMessage");
 
-    if (!data.shop_id) {
-        message.innerHTML = "⚠️ اختر المحل أولاً";
+    if (!shopId) {
+        message.textContent = "اختر المحل أولاً";
         return;
     }
 
-    if (!data.name) {
-        message.innerHTML = "⚠️ اكتب اسم القطعة أولاً";
+    if (!name) {
+        message.textContent = "أدخل اسم قطعة الغيار";
         return;
     }
 
-    try {
+    const formData = new FormData();
 
-        const response = await fetch("/api/parts", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify(data)
-        });
+    formData.append("shop_id", shopId);
+    formData.append("name", name);
+    formData.append("part_number", partNumber);
+    formData.append("car_model", carModel);
+    formData.append("price", price);
+    formData.append("quantity", quantity);
 
-        const result = await response.json();
+    if (imageInput && imageInput.files.length > 0) {
 
-        if (result.success) {
+        const file = imageInput.files[0];
 
-            message.innerHTML =
-                "✅ تمت إضافة قطعة الغيار بنجاح";
-
-            document.getElementById("partName").value = "";
-            document.getElementById("partNumber").value = "";
-            document.getElementById("carModel").value = "";
-            document.getElementById("partPrice").value = "";
-            document.getElementById("partQuantity").value = "";
-
-        } else {
-
-            message.innerHTML =
-                "❌ " + (result.error || "حدث خطأ");
-
-        }
-
-    } catch (error) {
-
-        console.error(error);
-
-        message.innerHTML =
-            "⚠️ تعذر الاتصال بالخادم";
-    }
-}
-
-
-// ========================================
-// 🛠️ إدارة البيانات
-// ========================================
-
-async function loadManagement() {
-
-    const management =
-        document.getElementById("management");
-
-    management.innerHTML =
-        "<p>🔄 جاري تحميل البيانات...</p>";
-
-    try {
-
-        const shopsResponse =
-            await fetch("/api/shops");
-
-        const shops =
-            await shopsResponse.json();
-
-        if (!shops.length) {
-
-            management.innerHTML =
-                "<p>لا توجد محلات مسجلة.</p>";
-
+        if (file.size > 5 * 1024 * 1024) {
+            message.textContent =
+                "حجم الصورة يجب ألا يتجاوز 5 ميجابايت";
             return;
         }
 
-        let html = "";
+        formData.append("image", file);
+    }
 
-        for (const shop of shops) {
+    try {
+        const response = await fetch(`${API}/parts`, {
+            method: "POST",
+            body: formData
+        });
 
-            html += `
-                <div class="card">
+        const data = await response.json();
 
-                    <h3>🏪 ${shop.name}</h3>
-
-                    <p>📞 ${shop.phone || "لا يوجد رقم"}</p>
-
-                    <p>📍 ${shop.location || "غير محدد"}</p>
-
-                    <p>🏠 ${shop.address || "غير محدد"}</p>
-
-                    <button onclick="editShop(
-                        ${shop.id},
-                        '${escapeText(shop.name)}',
-                        '${escapeText(shop.phone || "")}',
-                        '${escapeText(shop.address || "")}',
-                        '${escapeText(shop.location || "")}'
-                    )">
-                        ✏️ تعديل المحل
-                    </button>
-
-                    <button onclick="deleteShop(${shop.id})">
-                        🗑️ حذف المحل
-                    </button>
-
-                </div>
-            `;
+        if (!response.ok) {
+            throw new Error(data.error || "حدث خطأ");
         }
 
-        management.innerHTML = html;
+        message.textContent = "تمت إضافة قطعة الغيار بنجاح ✅";
+
+        document.getElementById("partName").value = "";
+        document.getElementById("partNumber").value = "";
+        document.getElementById("carModel").value = "";
+        document.getElementById("partPrice").value = "";
+        document.getElementById("partQuantity").value = "";
+
+        if (imageInput) {
+            imageInput.value = "";
+        }
 
     } catch (error) {
-
         console.error(error);
-
-        management.innerHTML =
-            "<p>⚠️ تعذر تحميل البيانات.</p>";
+        message.textContent =
+            "حدث خطأ أثناء إضافة قطعة الغيار";
     }
 }
 
+// ========================================
+// الإدارة
+// ========================================
+
+async function loadManagement() {
+    const management = document.getElementById("management");
+
+    if (!management) return;
+
+    management.innerHTML = "<p>جاري تحميل البيانات...</p>";
+
+    try {
+        const [shopsResponse, partsResponse] = await Promise.all([
+            fetch(`${API}/shops`),
+            fetch(`${API}/parts`)
+        ]);
+
+        const shops = await shopsResponse.json();
+        const parts = await partsResponse.json();
+
+        management.innerHTML = `
+            <h3>🏪 المحلات</h3>
+
+            ${
+                shops.length
+                ? shops.map(shop => {
+
+                    const map = mapUrl(
+                        shop.latitude,
+                        shop.longitude
+                    );
+
+                    return `
+                        <div class="management-card">
+
+                            <h4>${escapeHtml(shop.name)}</h4>
+
+                            <p>📞 ${escapeHtml(shop.phone || "لا يوجد")}</p>
+                            <p>📍 ${escapeHtml(shop.address || "لا يوجد")}</p>
+                            <p>📌 ${escapeHtml(shop.location || "لا يوجد")}</p>
+
+                            ${
+                                map
+                                ? `
+                                    <a
+                                        href="${map}"
+                                        target="_blank"
+                                        class="action-button map-button"
+                                    >
+                                        🗺️ الخريطة
+                                    </a>
+                                `
+                                : ""
+                            }
+
+                            <div class="action-buttons">
+
+                                <button onclick="editShop(${shop.id})">
+                                    ✏️ تعديل
+                                </button>
+
+                                <button onclick="deleteShop(${shop.id})">
+                                    🗑️ حذف
+                                </button>
+
+                            </div>
+
+                        </div>
+                    `;
+                }).join("")
+                : "<p>لا توجد محلات.</p>"
+            }
+
+            <h3>🔧 قطع الغيار</h3>
+
+            ${
+                parts.length
+                ? parts.map(part => {
+
+                    const imageHtml = part.image
+                        ? `
+                            <div class="part-image-box">
+                                <img
+                                    src="${escapeHtml(part.image)}"
+                                    alt="${escapeHtml(part.name)}"
+                                    class="part-image"
+                                >
+                            </div>
+                        `
+                        : "";
+
+                    return `
+                        <div class="management-card">
+
+                            ${imageHtml}
+
+                            <h4>${escapeHtml(part.name)}</h4>
+
+                            <p>
+                                🏪 المحل:
+                                ${escapeHtml(part.shop_name || "غير محدد")}
+                            </p>
+
+                            <p>
+                                🔢 رقم القطعة:
+                                ${escapeHtml(part.part_number || "غير محدد")}
+                            </p>
+
+                            <p>
+                                🚗 السيارة:
+                                ${escapeHtml(part.car_model || "غير محدد")}
+                            </p>
+
+                            <p>
+                                💰 السعر:
+                                ${escapeHtml(part.price ?? "غير محدد")} جنيه
+                            </p>
+
+                            <p>
+                                📦 الكمية:
+                                ${escapeHtml(part.quantity ?? 0)}
+                            </p>
+
+                            <div class="action-buttons">
+
+                                <button onclick="editPart(${part.id})">
+                                    ✏️ تعديل
+                                </button>
+
+                                <button onclick="deletePart(${part.id})">
+                                    🗑️ حذف
+                                </button>
+
+                            </div>
+
+                        </div>
+                    `;
+                }).join("")
+                : "<p>لا توجد قطع غيار.</p>"
+            }
+        `;
+
+    } catch (error) {
+        console.error(error);
+        management.innerHTML =
+            "<p>حدث خطأ أثناء تحميل الإدارة.</p>";
+    }
+}
 
 // ========================================
-// ✏️ تعديل محل
+// تعديل محل
 // ========================================
 
-async function editShop(
-    id,
-    name,
-    phone,
-    address,
-    location
-) {
+async function editShop(id) {
 
-    const newName =
-        prompt("اسم المحل:", name);
+    const name = prompt("اسم المحل الجديد:");
+    if (name === null) return;
 
-    if (newName === null) return;
+    const phone = prompt("رقم الهاتف:");
+    if (phone === null) return;
 
-    const newPhone =
-        prompt("رقم الهاتف:", phone);
+    const address = prompt("العنوان:");
+    if (address === null) return;
 
-    if (newPhone === null) return;
-
-    const newAddress =
-        prompt("عنوان المحل:", address);
-
-    if (newAddress === null) return;
-
-    const newLocation =
-        prompt("الموقع / المنطقة:", location);
-
-    if (newLocation === null) return;
+    const location = prompt("الموقع:");
+    if (location === null) return;
 
     try {
 
-        const response = await fetch(
-            "/api/shops/" + id,
-            {
-                method: "PUT",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({
-                    name: newName,
-                    phone: newPhone,
-                    address: newAddress,
-                    location: newLocation
-                })
-            }
-        );
+        const response = await fetch(`${API}/shops/${id}`, {
+            method: "PUT",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                name,
+                phone,
+                address,
+                location
+            })
+        });
 
-        const result = await response.json();
-
-        alert(
-            result.success
-                ? "✅ تم تعديل المحل"
-                : "❌ " + result.error
-        );
-
-        if (result.success) {
-
-            await loadShops();
-            await loadManagement();
+        if (!response.ok) {
+            throw new Error("فشل تعديل المحل");
         }
 
-    } catch (error) {
+        await loadManagement();
+        await loadShops();
 
-        alert("⚠️ تعذر الاتصال بالخادم");
+    } catch (error) {
+        console.error(error);
+        alert("حدث خطأ أثناء تعديل المحل");
     }
 }
 
-
 // ========================================
-// 🗑️ حذف محل
+// حذف محل
 // ========================================
 
 async function deleteShop(id) {
 
-    const confirmed =
-        confirm(
-            "⚠️ هل أنت متأكد من حذف هذا المحل؟"
-        );
-
-    if (!confirmed) return;
+    if (!confirm("هل أنت متأكد من حذف المحل؟")) {
+        return;
+    }
 
     try {
 
-        const response = await fetch(
-            "/api/shops/" + id,
-            {
-                method: "DELETE"
-            }
-        );
+        const response = await fetch(`${API}/shops/${id}`, {
+            method: "DELETE"
+        });
 
-        const result = await response.json();
-
-        alert(
-            result.success
-                ? "✅ تم حذف المحل"
-                : "❌ " + result.error
-        );
-
-        if (result.success) {
-
-            await loadShops();
-            await loadManagement();
+        if (!response.ok) {
+            throw new Error("فشل حذف المحل");
         }
+
+        await loadManagement();
+        await loadShops();
 
     } catch (error) {
-
-        alert("⚠️ تعذر الاتصال بالخادم");
-    }
-}
-
-
-// ========================================
-// 🧹 حماية النصوص
-// ========================================
-
-function escapeText(text) {
-
-    return String(text)
-        .replace(/\\/g, "\\\\")
-        .replace(/'/g, "\\'")
-        .replace(/\n/g, "\\n")
-        .replace(/\r/g, "\\r");
-}
-
-
-// ========================================
-// 🚀 تشغيل عند فتح الموقع
-// ========================================
-
-document.addEventListener(
-    "DOMContentLoaded",
-    () => {
-        loadShops();
-    }
-);
-
-
-
-
-
-
-// ========================================
-// 🔧 إدارة قطع الغيار
-// ========================================
-
-async function loadManagement() {
-
-    const management =
-        document.getElementById("management");
-
-    management.innerHTML =
-        "<p>🔄 جاري تحميل المحلات وقطع الغيار...</p>";
-
-    try {
-
-        const shopsResponse =
-            await fetch("/api/shops");
-
-        const partsResponse =
-            await fetch("/api/parts");
-
-        const shops =
-            await shopsResponse.json();
-
-        const parts =
-            await partsResponse.json();
-
-        if (!shops.length) {
-
-            management.innerHTML =
-                "<p>لا توجد محلات مسجلة.</p>";
-
-            return;
-        }
-
-        let html = "";
-
-        for (const shop of shops) {
-
-            const shopParts =
-                parts.filter(
-                    part => Number(part.shop_id) === Number(shop.id)
-                );
-
-            html += `
-                <div class="card">
-
-                    <h3>🏪 ${escapeText(shop.name)}</h3>
-
-                    <p>📞 ${escapeText(shop.phone || "لا يوجد رقم")}</p>
-
-                    <p>📍 ${escapeText(shop.location || "غير محدد")}</p>
-
-                    <p>🏠 ${escapeText(shop.address || "غير محدد")}</p>
-
-                    <button onclick="editShop(
-                        ${shop.id},
-                        '${escapeText(shop.name)}',
-                        '${escapeText(shop.phone || "")}',
-                        '${escapeText(shop.address || "")}',
-                        '${escapeText(shop.location || "")}'
-                    )">
-                        ✏️ تعديل المحل
-                    </button>
-
-                    <button onclick="deleteShop(${shop.id})">
-                        🗑️ حذف المحل
-                    </button>
-
-                    <hr>
-
-                    <h4>🔧 قطع الغيار (${shopParts.length})</h4>
-            `;
-
-            if (!shopParts.length) {
-
-                html += `
-                    <p>لا توجد قطع غيار مسجلة لهذا المحل.</p>
-                `;
-
-            } else {
-
-                for (const part of shopParts) {
-
-                    html += `
-                        <div class="card">
-
-                            <h4>🔧 ${escapeText(part.name)}</h4>
-
-                            <p>🔢 رقم القطعة:
-                                ${escapeText(part.part_number || "غير محدد")}
-                            </p>
-
-                            <p>🚗 السيارة:
-                                ${escapeText(part.car_model || "غير محددة")}
-                            </p>
-
-                            <p>💰 السعر:
-                                ${escapeText(String(part.price ?? "0"))}
-                            </p>
-
-                            <p>📦 الكمية:
-                                ${escapeText(String(part.quantity ?? "0"))}
-                            </p>
-
-                            <button onclick="editPart(${part.id})">
-                                ✏️ تعديل القطعة
-                            </button>
-
-                            <button onclick="deletePart(${part.id})">
-                                🗑️ حذف القطعة
-                            </button>
-
-                        </div>
-                    `;
-                }
-            }
-
-            html += `
-                </div>
-            `;
-        }
-
-        management.innerHTML = html;
-
-    } catch (error) {
-
         console.error(error);
-
-        management.innerHTML =
-            "<p>⚠️ تعذر تحميل البيانات.</p>";
+        alert("حدث خطأ أثناء حذف المحل");
     }
 }
 
-
 // ========================================
-// ✏️ تعديل قطعة غيار
+// تعديل قطعة
 // ========================================
 
 async function editPart(id) {
 
+    const name = prompt("اسم القطعة الجديد:");
+    if (name === null) return;
+
+    const partNumber = prompt("رقم القطعة:");
+    if (partNumber === null) return;
+
+    const carModel = prompt("موديل السيارة:");
+    if (carModel === null) return;
+
+    const price = prompt("السعر:");
+    if (price === null) return;
+
+    const quantity = prompt("الكمية:");
+    if (quantity === null) return;
+
     try {
 
-        const response =
-            await fetch("/api/parts");
+        const response = await fetch(`${API}/parts/${id}`, {
+            method: "PUT",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                name,
+                part_number: partNumber,
+                car_model: carModel,
+                price,
+                quantity
+            })
+        });
 
-        const parts =
-            await response.json();
-
-        const part =
-            parts.find(
-                item => Number(item.id) === Number(id)
-            );
-
-        if (!part) {
-
-            alert("❌ القطعة غير موجودة");
-
-            return;
+        if (!response.ok) {
+            throw new Error("فشل تعديل القطعة");
         }
-
-        const name =
-            prompt("اسم القطعة:", part.name);
-
-        if (name === null) return;
-
-        const partNumber =
-            prompt(
-                "رقم القطعة:",
-                part.part_number || ""
-            );
-
-        if (partNumber === null) return;
-
-        const carModel =
-            prompt(
-                "موديل السيارة:",
-                part.car_model || ""
-            );
-
-        if (carModel === null) return;
-
-        const price =
-            prompt(
-                "السعر:",
-                part.price ?? ""
-            );
-
-        if (price === null) return;
-
-        const quantity =
-            prompt(
-                "الكمية:",
-                part.quantity ?? ""
-            );
-
-        if (quantity === null) return;
-
-        const updateResponse =
-            await fetch(
-                "/api/parts/" + id,
-                {
-                    method: "PUT",
-                    headers: {
-                        "Content-Type": "application/json"
-                    },
-                    body: JSON.stringify({
-                        name: name,
-                        part_number: partNumber,
-                        car_model: carModel,
-                        price: price,
-                        quantity: quantity
-                    })
-                }
-            );
-
-        const result =
-            await updateResponse.json();
-
-        if (!result.success) {
-
-            alert(
-                "❌ " +
-                (result.error || "تعذر تعديل القطعة")
-            );
-
-            return;
-        }
-
-        alert("✅ تم تعديل القطعة بنجاح");
 
         await loadManagement();
 
     } catch (error) {
-
         console.error(error);
-
-        alert("⚠️ تعذر الاتصال بالخادم");
+        alert("حدث خطأ أثناء تعديل القطعة");
     }
 }
 
-
 // ========================================
-// 🗑️ حذف قطعة غيار
+// حذف قطعة
 // ========================================
 
 async function deletePart(id) {
 
-    const confirmed =
-        confirm(
-            "⚠️ هل أنت متأكد من حذف قطعة الغيار هذه؟\n\nلا يمكن التراجع عن الحذف."
-        );
-
-    if (!confirmed) return;
+    if (!confirm("هل أنت متأكد من حذف قطعة الغيار؟")) {
+        return;
+    }
 
     try {
 
-        const response =
-            await fetch(
-                "/api/parts/" + id,
-                {
-                    method: "DELETE"
-                }
-            );
+        const response = await fetch(`${API}/parts/${id}`, {
+            method: "DELETE"
+        });
 
-        const result =
-            await response.json();
-
-        if (!result.success) {
-
-            alert(
-                "❌ " +
-                (result.error || "تعذر حذف القطعة")
-            );
-
-            return;
+        if (!response.ok) {
+            throw new Error("فشل حذف القطعة");
         }
-
-        alert("✅ تم حذف القطعة بنجاح");
 
         await loadManagement();
 
     } catch (error) {
-
         console.error(error);
-
-        alert("⚠️ تعذر الاتصال بالخادم");
+        alert("حدث خطأ أثناء حذف القطعة");
     }
 }
-
