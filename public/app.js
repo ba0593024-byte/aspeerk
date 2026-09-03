@@ -804,3 +804,13 @@ async function loginUser() {
         message.textContent = error.message || "حدث خطأ أثناء تسجيل الدخول";
     }
 }
+// ========================================
+// 🔓 تسجيل الخروج
+// ========================================
+
+function logoutUser() {
+    localStorage.removeItem("aspeerk_token");
+    localStorage.removeItem("aspeerk_shop_id");
+    location.reload();
+}
+
