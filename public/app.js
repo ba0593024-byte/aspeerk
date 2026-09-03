@@ -43,14 +43,24 @@ async function loadShops() {
 
         if (!select) return;
 
+        const myShopId = localStorage.getItem("aspeerk_shop_id");
+
         select.innerHTML = '<option value="">اختر المحل</option>';
 
         shops.forEach(shop => {
+            if (myShopId && String(shop.id) !== String(myShopId)) {
+                return;
+            }
+
             const option = document.createElement("option");
             option.value = shop.id;
             option.textContent = shop.name;
             select.appendChild(option);
         });
+
+        if (myShopId) {
+            select.value = myShopId;
+        }
 
     } catch (error) {
         console.error("خطأ في تحميل المحلات:", error);
@@ -107,7 +117,8 @@ async function addShop() {
         const response = await fetch(`${API}/shops`, {
             method: "POST",
             headers: {
-                "Content-Type": "application/json"
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${localStorage.getItem("aspeerk_token") || ""}`
             },
             body: JSON.stringify({
                 name,
@@ -126,6 +137,10 @@ async function addShop() {
         }
 
         message.textContent = "تمت إضافة المحل بنجاح ✅";
+
+        if (data.shop_id) {
+            localStorage.setItem("aspeerk_shop_id", String(data.shop_id));
+        }
 
         document.getElementById("shopName").value = "";
         document.getElementById("shopPhone").value = "";
@@ -324,11 +339,6 @@ async function addPart() {
     const imageInput = document.getElementById("partImage");
     const message = document.getElementById("partMessage");
 
-    if (!shopId) {
-        message.textContent = "اختر المحل أولاً";
-        return;
-    }
-
     if (!name) {
         message.textContent = "أدخل اسم قطعة الغيار";
         return;
@@ -359,6 +369,9 @@ async function addPart() {
     try {
         const response = await fetch(`${API}/parts`, {
             method: "POST",
+            headers: {
+                "Authorization": `Bearer ${localStorage.getItem("aspeerk_token") || ""}`
+            },
             body: formData
         });
 
@@ -685,5 +698,109 @@ async function deletePart(id) {
     } catch (error) {
         console.error(error);
         alert("حدث خطأ أثناء حذف القطعة");
+    }
+}
+
+
+// ========================================
+// 🔐 إنشاء حساب
+// ========================================
+
+async function registerUser() {
+    const name = document.getElementById("authName").value.trim();
+    const phone = document.getElementById("authPhone").value.trim();
+    const password = document.getElementById("authPassword").value;
+    const message = document.getElementById("authMessage");
+
+    if (!name || !phone || !password) {
+        message.textContent = "يرجى إدخال الاسم ورقم الهاتف وكلمة المرور";
+        return;
+    }
+
+    try {
+        const response = await fetch(`${API}/auth/register`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                name,
+                phone,
+                password
+            })
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.error || "تعذر إنشاء الحساب");
+        }
+
+        if (data.token) {
+            localStorage.setItem("aspeerk_token", data.token);
+        }
+
+        message.textContent = "تم إنشاء الحساب وتسجيل الدخول بنجاح ✅";
+
+    } catch (error) {
+        console.error(error);
+        message.textContent = error.message || "حدث خطأ أثناء إنشاء الحساب";
+    }
+}
+
+
+// ========================================
+// 🔓 تسجيل الدخول
+// ========================================
+
+async function loginUser() {
+    const phone = document.getElementById("authPhone").value.trim();
+    const password = document.getElementById("authPassword").value;
+    const message = document.getElementById("authMessage");
+
+    if (!phone || !password) {
+        message.textContent = "يرجى إدخال رقم الهاتف وكلمة المرور";
+        return;
+    }
+
+    try {
+        const response = await fetch(`${API}/auth/login`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                phone,
+                password
+            })
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.error || "تعذر تسجيل الدخول");
+        }
+
+        if (data.token) {
+            localStorage.setItem("aspeerk_token", data.token);
+
+            const meResponse = await fetch(`${API}/auth/me`, {
+                headers: {
+                    "Authorization": `Bearer ${data.token}`
+                }
+            });
+
+            const me = await meResponse.json();
+
+            if (meResponse.ok && me.shop_id) {
+                localStorage.setItem("aspeerk_shop_id", String(me.shop_id));
+            }
+        }
+
+        message.textContent = "تم تسجيل الدخول بنجاح ✅";
+
+    } catch (error) {
+        console.error(error);
+        message.textContent = error.message || "حدث خطأ أثناء تسجيل الدخول";
     }
 }

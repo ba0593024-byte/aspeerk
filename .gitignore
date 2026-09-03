@@ -1,7 +1,10 @@
 node_modules/
-data/*.db
-data/*.sqlite
-data/*.sqlite3
-.env
-server.js.backup
-public/app.js.backup
+data/
+public/uploads/
+*.backup
+*.before-auth
+*.before-subscriptions
+server.js.before-auth-link
+server.js.before-subscriptions
+package-lock.json.before-auth
+package.json.before-auth

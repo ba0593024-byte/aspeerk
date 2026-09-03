@@ -5,6 +5,7 @@ const multer = require("multer");
 const sqlite3 = require("sqlite3").verbose();
 
 const app = express();
+const setupAuth = require("./auth");
 const PORT = process.env.PORT || 3000;
 
 // ========================================
@@ -60,6 +61,7 @@ app.use(express.static(path.join(__dirname, "public")));
 
 const dbPath = path.join(dataDir, "aspeerk.db");
 const db = new sqlite3.Database(dbPath);
+setupAuth(app, db);
 
 // ========================================
 // 🏗️ إنشاء الجداول
@@ -188,7 +190,7 @@ app.get("/api/shops", (req, res) => {
 // ➕ إضافة محل
 // ========================================
 
-app.post("/api/shops", (req, res) => {
+app.post("/api/shops", app.authMiddleware, (req, res) => {
 
     const {
         name,
@@ -230,10 +232,26 @@ app.post("/api/shops", (req, res) => {
                 });
             }
 
-            res.json({
-                success: true,
-                shop_id: this.lastID
-            });
+            const shopId = this.lastID;
+
+            db.run(
+                `UPDATE users SET shop_id = ? WHERE id = ?`,
+                [shopId, req.user.id],
+                (updateErr) => {
+
+                    if (updateErr) {
+                        console.error(updateErr);
+                        return res.status(500).json({
+                            error: "تم إنشاء المحل لكن تعذر ربطه بالحساب"
+                        });
+                    }
+
+                    res.json({
+                        success: true,
+                        shop_id: shopId
+                    });
+                }
+            );
         }
     );
 });
@@ -363,11 +381,11 @@ app.get("/api/parts", (req, res) => {
 
 app.post(
     "/api/parts",
+    app.authMiddleware,
     upload.single("image"),
     (req, res) => {
 
         const {
-            shop_id,
             name,
             part_number,
             car_model,
@@ -375,9 +393,17 @@ app.post(
             quantity
         } = req.body;
 
-        if (!shop_id || !name) {
+        if (!name || !String(name).trim()) {
             return res.status(400).json({
-                error: "المحل واسم القطعة مطلوبان"
+                error: "اسم قطعة الغيار مطلوب"
+            });
+        }
+
+        const shopId = req.user.shop_id;
+
+        if (!shopId) {
+            return res.status(400).json({
+                error: "يجب تسجيل محل أولاً قبل إضافة قطع الغيار"
             });
         }
 
@@ -396,15 +422,14 @@ app.post(
                 quantity,
                 image
             )
-
             VALUES (?, ?, ?, ?, ?, ?, ?)
         `;
 
         db.run(
             sql,
             [
-                shop_id,
-                name,
+                shopId,
+                String(name).trim(),
                 part_number || "",
                 car_model || "",
                 price || 0,
@@ -433,6 +458,9 @@ app.post(
 
 // ========================================
 // ✏️ تعديل قطعة
+// ========================================
+
+
 // ========================================
 
 app.put("/api/parts/:id", (req, res) => {

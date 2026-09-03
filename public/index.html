@@ -21,6 +21,63 @@
 <main class="container">
 
     <!-- ================================ -->
+    <!-- 🔐 تسجيل الدخول / إنشاء حساب -->
+    <!-- ================================ -->
+
+    <section class="form-box">
+
+        <h2>🔐 حساب اسبيرك</h2>
+
+        <label for="authName">
+            الاسم
+        </label>
+
+        <input
+            type="text"
+            id="authName"
+            placeholder="اسمك"
+        >
+
+        <label for="authPhone">
+            📞 رقم الهاتف
+        </label>
+
+        <input
+            type="tel"
+            id="authPhone"
+            placeholder="مثال: 0123456789"
+        >
+
+        <label for="authPassword">
+            🔑 كلمة المرور
+        </label>
+
+        <input
+            type="password"
+            id="authPassword"
+            placeholder="كلمة المرور"
+        >
+
+        <button
+            type="button"
+            onclick="registerUser()"
+        >
+            📝 إنشاء حساب
+        </button>
+
+        <button
+            type="button"
+            onclick="loginUser()"
+        >
+            🔓 تسجيل الدخول
+        </button>
+
+        <p id="authMessage"></p>
+
+    </section>
+
+
+    <!-- ================================ -->
     <!-- 🔍 البحث -->
     <!-- ================================ -->
 
