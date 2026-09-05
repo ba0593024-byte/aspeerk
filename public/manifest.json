@@ -8,5 +8,13 @@
   "theme_color": "#1f2937",
   "dir": "rtl",
   "lang": "ar",
-  "id": "/aspeerk"
+  "id": "/aspeerk",
+  "icons": [
+    {
+      "src": "/icon-512.webp",
+      "sizes": "512x512",
+      "type": "image/webp",
+      "purpose": "any maskable"
+    }
+  ]
 }
